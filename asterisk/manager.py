@@ -218,6 +218,7 @@ class Manager(object):
 
         self.message_thread.setDaemon(True)
         self.event_dispatch_thread.setDaemon(True)
+        self.asterisk_version = None
 
     def __del__(self):
         self.close()
@@ -526,6 +527,9 @@ class Manager(object):
         if response.get_header('Response') == 'Error':
             raise ManagerAuthException(response.get_header('Message'))
 
+        # get and saves asterisk version
+        self.get_asterisk_version()
+
         return response
 
     def ping(self):
@@ -627,6 +631,26 @@ class Manager(object):
         response = self.send_action(cdict)
 
         return response
+
+    def show_version(self):
+        """Get Asterisk version from manager"""
+        command_output = self.command('core show version')
+        raw_response = command_output.response
+
+        return raw_response
+
+    def get_asterisk_version(self):
+        """Get and saves Asterisk version"""
+        raw_response = self.show_version()
+        asterisk_version_regex = r'Asterisk \d+\.\d+\.\d+'
+        asterisk_search = re.search(asterisk_version_regex, raw_response[3])
+        version_str = asterisk_search.group().split()[1]
+        major, minor, patch = version_str.split('.')
+        self.asterisk_version = {
+            'MAJOR': int(major),
+            'MINOR': int(minor),
+            'PATCH': int(patch)
+        }
 
     def extension_state(self, exten, context):
         """Get the state of an extension"""
