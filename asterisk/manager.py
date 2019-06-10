@@ -114,7 +114,7 @@ class ManagerMsg(object):
             # all valid header lines end in \r\n in Asterisk<=13
             # and all valid headers lines in Asterisk>13 dont's starts
             # with 'Output:'
-            if not line.endswith('\r\n') or line.startsw('Output:'):
+            if not line.endswith('\r\n') or line.startswith('Output:'):
                 data.extend(response[n:])
                 break
             try:
