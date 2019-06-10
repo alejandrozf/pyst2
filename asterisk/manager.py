@@ -76,14 +76,14 @@ EOL = '\r\n'
 
 class ManagerMsg(object):
     """A manager interface message"""
-    def __init__(self, response):
+    def __init__(self, response, asterisk_version):
         # the raw response, straight from the horse's mouth:
         self.response = response
         self.data = ''
         self.headers = {}
 
         # parse the response
-        self.parse(response)
+        self.parse(response, asterisk_version)
 
         # This is an unknown message, may happen if a command (notably
         # 'dialplan show something') contains a \n\r\n sequence in the
@@ -106,13 +106,15 @@ class ManagerMsg(object):
             else:
                 self.headers['Response'] = 'Generated Header'
 
-    def parse(self, response):
+    def parse(self, response, asterisk_version):
         """Parse a manager message"""
 
         data = []
         for n, line in enumerate(response):
-            # all valid header lines end in \r\n
-            if not line.endswith('\r\n'):
+            # all valid header lines end in \r\n in Asterisk<=13
+            # and all valid headers lines in Asterisk>13 dont's starts
+            # with 'Output:'
+            if not line.endswith('\r\n') or line.startsw('Output:'):
                 data.extend(response[n:])
                 break
             try:
@@ -420,7 +422,7 @@ class Manager(object):
                     break
 
                 # parse the data
-                message = ManagerMsg(data)
+                message = ManagerMsg(data, self.asterisk_version)
 
                 # check if this is an event message
                 if message.has_header('Event'):
